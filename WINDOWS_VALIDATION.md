@@ -202,11 +202,25 @@ checks and parsing of the updated workflow YAML passed. The new native
 `scripts/test-windows-java-bridge.ps1` DLL-loading check is also wired into the
 Windows CI job after the bridge build.
 
-Native Windows Java-bridge release linking and the new DLL-loading check still
-require execution. The script checks loading before WinFsp initialization and
-the JNI mount export; it does not call JNI or claim Java mount functionality.
-The earlier native CLI and mounted-drive results remain associated with their
-recorded revisions.
+Native Windows x86-64/MSVC validation was reported on 2026-10-28 for
+[`b51f370df5e40411c81e1a9ce174d3612f43466f`](https://github.com/Code-Demon12/rencfs/commit/b51f370df5e40411c81e1a9ce174d3612f43466f).
+After the run, `git rev-parse HEAD` reported that revision and
+`git status --short` was empty. This record is a later documentation-only
+change and does not alter the tested implementation.
+
+| Native Java bridge check | Result |
+|---|---|
+| `cargo +nightly-2025-03-01 build --locked --release --manifest-path java-bridge/Cargo.toml --target-dir target` | passed; 1 min 46 s |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\test-windows-java-bridge.ps1" -DllPath ".\target\release\java_bridge.dll"` | passed |
+
+The helper reached its final success message. It loaded and freed
+`java_bridge.dll` with dependency lookup restricted to the DLL directory and
+System32, found `Java_RustLibrary_mount`, and confirmed that no WinFsp DLL was
+loaded before mount initialization. This checks DLL loading and its JNI mount
+export; it does not invoke JNI or claim a Java mount/unmount result. The
+earlier native CLI and mounted-drive results remain associated with their
+recorded revisions. The new GitHub Actions loader step still requires CI
+execution.
 
 ## Scope and compatibility
 
