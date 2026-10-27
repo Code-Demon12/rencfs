@@ -17,7 +17,9 @@ Detailed per-module guides live in `docs/claude/` — read the linked file when 
 
 Key differentiators: fast seek on reads and writes (256 KB encrypted blocks), parallel writes to the same file, memory-safe key handling (`shush-rs`: mlock/mprotect/zeroize), full metadata + filename encryption, and a modular design usable as a library without FUSE.
 
-Platform support: full functionality on **Linux only**. The binary prints a "not yet ready" / "not supported" message on other platforms; the library compiles elsewhere via a dummy mount backend.
+Platform support: Linux uses FUSE. Windows has an initial native WinFsp backend;
+see `docs/readme/Windows.md` and `WINDOWS_VALIDATION.md` for its limitations and
+required native validation. Other platforms retain a dummy mount backend.
 
 ## Common Development Commands
 

@@ -70,6 +70,7 @@ Some of these are still being worked on and marked with `[WIP]`.
 
 - [Functionality](docs/readme/Functionality.md)
 - [Stack](docs/readme/Stack.md)
+- [Native Windows support and verification](docs/readme/Windows.md)
 
 # Documentation
 
@@ -87,7 +88,8 @@ Please look into [Flows](docs/readme/flows.md) for a detailed sequence flow desc
 
 # Next steps
 
-- The plan is to implement it also on macOS and Windows
+- macOS support is planned. Native Windows support is available through
+  [WinFsp](docs/readme/Windows.md), within the documented initial scope.
 - **Systemd service** is being worked on [rencfs-daemon](https://github.com/radumarias/rencfs-daemon)
 - **GUI** is being worked on [rencfs-desktop](https://github.com/radumarias/rencfs-desktop)
   and [ciphershell-kotlin](https://github.com/radumarias/ciphershell-kotlin)
