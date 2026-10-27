@@ -125,9 +125,10 @@ graceful unmount, encrypted backing inspection, wrong-password rejection,
 read-only remount checks, persistence and final deletion after a writable
 remount. The append-only user-handle read was denied as expected.
 
-The release-profile PowerShell runner and updated GitHub Actions jobs have not
-been executed in this native session. Their release behavior remains for CI to
-verify; these debug-profile results do not claim that exact runner passed.
+At that revision the release-profile PowerShell runner and updated GitHub
+Actions jobs had not been executed in the native session. The later release
+runner result is recorded separately below; these historical debug-profile
+results do not claim that exact runner passed.
 
 ## PR #332 review follow-up
 
@@ -147,13 +148,43 @@ references. The Windows callback suite now contains 19 tests.
 
 Local review checks: 13/13 build-script target-selection cases, 2/2 signal
 decision tests, Linux and Windows GNU all-target release Clippy, locked root
-and Java bridge metadata, rustfmt and whitespace checks passed. A native rerun
-of this follow-up is still required; the earlier 136-test and mounted-drive
-results above remain associated with the initial PR revision.
+and Java bridge metadata, rustfmt and whitespace checks passed. The native
+release rerun of this follow-up passed as recorded below; the earlier 136-test
+and diagnostic mounted-drive results remain associated with the initial PR
+revision.
 
 The suggested `TempDir::keep()` change was not applied: locked tempfile 3.13.0
 defines `TempDir::into_path()` without deprecation and does not provide
 `TempDir::keep()`. Switching to the newer API would break the locked build.
+
+## Native release validation of the review follow-up
+
+Reported on 2026-10-28 from native Windows x86-64/MSVC with WinFsp installed.
+The tested commit was
+[`94d5432fb54713f6baa03fd3523f199cb7392073`](https://github.com/Code-Demon12/rencfs/commit/94d5432fb54713f6baa03fd3523f199cb7392073)
+on `fix/windows-support`. After the run, `git rev-parse HEAD` reported that
+revision and `git status --short` was empty. This validation record is a later
+documentation-only change; it does not alter the tested implementation.
+
+The pinned toolchain is `nightly-2025-03-01`. The successful command was:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\test-windows.ps1" -Drive R: -TranscriptPath "$env:TEMP\rencfs-pr332-review-native.log"
+```
+
+| Runner check | Result |
+|---|---|
+| `cargo fmt --all -- --check` | passed |
+| `cargo build --locked --release --all-targets --all-features` | passed |
+| `cargo test --locked --release --lib mount::windows::tests -- --nocapture --test-threads=1` | 19 passed, 0 failed; 4.42 s |
+| `cargo test --locked --release --test rencfs_windows_itest -- --ignored --nocapture --test-threads=1` | 1 passed, 0 failed; 1.15 s |
+| Temporary mounted drive removed after the integration test | passed |
+
+The runner reached its final success message, which follows all checks above.
+The mounted test ran without explicitly enabling the binding's diagnostic
+feature. This establishes a native release build and mounted-drive result for
+the review follow-up. It does not claim a new full native library-suite run or
+execution of the updated GitHub Actions jobs.
 
 ## Scope and compatibility
 
