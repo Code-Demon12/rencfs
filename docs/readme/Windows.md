@@ -33,6 +33,35 @@ mount-wide policy, not arbitrary POSIX-to-NTFS ACL translation. ACL mutation is
 explicitly unsupported. Path-based `mount::umount(path)` is Unix-only; use the
 owning handle or Ctrl+C on Windows.
 
+## Library consumers and the Java bridge
+
+On Windows MSVC, every final executable or `cdylib` that uses the Windows
+mount backend must enable WinFsp delay loading in its own build script.
+Cargo's `rustc-link-arg` output applies to targets in that package; the
+`/DELAYLOAD` argument from rencfs does not propagate to dependent packages.
+Use the target-aware settings in `build.rs`: link `delayimp` and delay-load
+`winfsp-x64.dll` for x86-64, `winfsp-x86.dll` for x86, or `winfsp-a64.dll` for
+ARM64. Emit these MSVC settings only for Windows MSVC targets.
+
+Delay loading lets the process load its executable or DLL before mounting
+calls `winfsp_wrs::init()`, which configures access to the separately installed
+WinFsp DLL. This is required with the standard installation, where WinFsp is
+not next to the application's executable or on the default DLL search path.
+The separate `java-bridge` crate therefore has its own build script.
+
+From the repository root, build and check the x86-64 Java bridge on native
+Windows:
+
+```powershell
+cargo build --locked --release --manifest-path java-bridge/Cargo.toml --target-dir target
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-windows-java-bridge.ps1 -DllPath .\target\release\java_bridge.dll
+```
+
+The focused check loads the DLL with the dependency search restricted to its
+directory and System32, verifies the mount export, and checks that WinFsp was
+not loaded eagerly. It does not invoke JNI or establish a Java mount result.
+See [the bridge README](../../java-bridge/README.md) for Java loading details.
+
 ## Storage compatibility
 
 New ciphertext filenames replace base64 `/` with `_`, and internal dot entries

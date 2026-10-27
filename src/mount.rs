@@ -80,7 +80,15 @@ pub(crate) trait MountHandleInner: Future<Output = io::Result<()>> {
 ///
 /// **`allow_root`** allow root to access the file system  
 /// **`allow_other`** allow other users to access the file system  
-/// **`read_only`** Set FUSE filesystem read-only mount option, default is disabled.
+/// **`read_only`** Mount the filesystem read-only; disabled by default.
+///
+/// # Windows MSVC linking
+///
+/// Library consumers must enable WinFsp delay loading in the build script of
+/// their final executable or `cdylib`; this crate's linker arguments do not
+/// propagate to dependent packages. This lets mounting initialize the WinFsp
+/// DLL location before its first use. See `docs/readme/Windows.md` and the
+/// target-aware settings in this crate's `build.rs`.
 #[must_use]
 #[allow(clippy::fn_params_excessive_bools)]
 #[allow(clippy::too_long_first_doc_paragraph)]

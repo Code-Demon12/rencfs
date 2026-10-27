@@ -186,6 +186,28 @@ feature. This establishes a native release build and mounted-drive result for
 the review follow-up. It does not claim a new full native library-suite run or
 execution of the updated GitHub Actions jobs.
 
+## Java bridge delay-load review follow-up
+
+The review of `b3d20a5f7d2fea1d56b0e2d0596d840a5b3acf89` identified that Cargo
+does not forward a dependency's `rustc-link-arg` output to a dependent package's
+final `cdylib` link. The separate Java bridge now emits its own target-aware
+Windows MSVC delay-load settings. No dependency or lockfile is changed.
+Consumer documentation explains the same requirement for other final
+executables and DLLs that use the mount backend.
+
+Both build scripts compiled with Rust 2021 and `-Dwarnings` and passed 13
+target-selection cases each. The Java bridge passed a locked Linux release
+build and Windows GNU all-target release Clippy. Root/Java rustfmt, whitespace
+checks and parsing of the updated workflow YAML passed. The new native
+`scripts/test-windows-java-bridge.ps1` DLL-loading check is also wired into the
+Windows CI job after the bridge build.
+
+Native Windows Java-bridge release linking and the new DLL-loading check still
+require execution. The script checks loading before WinFsp initialization and
+the JNI mount export; it does not call JNI or claim Java mount functionality.
+The earlier native CLI and mounted-drive results remain associated with their
+recorded revisions.
+
 ## Scope and compatibility
 
 See docs/readme/Windows.md. This initial backend intentionally excludes rename

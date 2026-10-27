@@ -96,6 +96,11 @@ jobs:
           cargo build --all-targets --all-features
           cargo build --release --all-targets --all-features
 
+      - name: java-bridge Windows DLL loading
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: .\scripts\test-windows-java-bridge.ps1 -DllPath .\java-bridge\target\release\java_bridge.dll
+
       - name: java-bridge fmt check
         run: |
           cd java-bridge
