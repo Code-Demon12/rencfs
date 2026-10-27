@@ -222,6 +222,31 @@ earlier native CLI and mounted-drive results remain associated with their
 recorded revisions. The new GitHub Actions loader step still requires CI
 execution.
 
+## Source-consumer dependency follow-up
+
+The review of `17fab012f16c0d7ecb5bd1679a721c392e8071f7` identified that a
+dependency package's workspace patch is ignored by an external workspace.
+The root `shush-rs` dependency now declares version `=0.1.11` together with
+the existing fixed Git revision directly. The root and Java workspace patches
+are retained. Registry publication still falls back to the unfixed 0.1.11
+release and requires a separate fixed-dependency publication decision.
+
+With nightly-2025-03-01, full locked/offline metadata for the cached Windows GNU
+target has identical root and Java resolved graphs and package identities
+before and after this edit. Both lockfiles remain byte-for-byte unchanged.
+Each graph contains exactly one `shush-rs` at the fixed Git revision, and the
+Java bridge and rencfs still use the same `SecretString` type. A locked/offline
+Linux Java-bridge all-target check passed.
+
+An external workspace without a patch selected registry 0.1.11 before the fix,
+as recorded in its resolved lockfile. After the fix, its metadata selected the
+fixed Git revision. This check seeded transitive versions from the repository
+lockfile to isolate source selection from unrelated offline resolution.
+Adding a matching direct Git dependency and implementing `PasswordProvider`
+with `SecretString` also passed a locked Windows GNU release check. These are
+resolution/type checks; no new native Windows runtime or published-package
+verification is claimed. Earlier native results retain their recorded revisions.
+
 ## Scope and compatibility
 
 See docs/readme/Windows.md. This initial backend intentionally excludes rename

@@ -130,3 +130,12 @@ This source archive does not redistribute the runtime or driver. The
 [merged Windows drop fix](https://github.com/Eyob94/shush-rs/pull/22), because
 the published 0.1.10 and 0.1.11 releases can panic when dropping secrets sharing
 an already-unlocked allocation page.
+
+The dependency declaration selects that Git revision directly, so path/Git
+consumers also receive the fix without relying on this repository's workspace
+patch. Callers that construct `shush_rs::SecretString` for rencfs APIs must use
+the same Git source to keep the Rust types compatible. The Java bridge's
+workspace patch already selects that revision for its direct dependency.
+Cargo uses the declared registry version when packaging for crates.io; that
+version remains unfixed. Publishing a Windows-capable release therefore still
+requires a separate decision about a fixed published dependency.
