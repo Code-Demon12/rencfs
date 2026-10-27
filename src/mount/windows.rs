@@ -305,13 +305,24 @@ impl WindowsFs {
 
     fn contexts(&self, ino: u64) -> Vec<Arc<OpenContext>> {
         let mut opened = self.opened.lock().unwrap();
-        let entries = opened.entry(ino).or_default();
-        entries.retain(|entry| entry.strong_count() != 0);
-        entries
-            .iter()
-            .filter_map(Weak::upgrade)
-            .filter(|context| !context.closed.load(Ordering::Acquire))
-            .collect()
+        let Some(entries) = opened.get_mut(&ino) else {
+            return Vec::new();
+        };
+        let mut contexts = Vec::with_capacity(entries.len());
+        entries.retain(|entry| {
+            let Some(context) = entry.upgrade() else {
+                return false;
+            };
+            if context.closed.load(Ordering::Acquire) {
+                return false;
+            }
+            contexts.push(context);
+            true
+        });
+        if entries.is_empty() {
+            opened.remove(&ino);
+        }
+        contexts
     }
 
     fn check_open(&self, ino: u64) -> NtResult<()> {
@@ -544,7 +555,7 @@ impl FileSystemInterface for WindowsFs {
             .is(CreateOptions::FILE_DELETE_ON_CLOSE)
         {
             if let Err(status) = self.check_delete(&context) {
-                let _ = self.close_core(&context);
+                self.close(context);
                 return Err(status);
             }
             context.pending_delete.store(true, Ordering::Release);
@@ -594,7 +605,7 @@ impl FileSystemInterface for WindowsFs {
         let context = self.context(attr, location, access, handle);
         if options.is(CreateOptions::FILE_DELETE_ON_CLOSE) {
             if let Err(status) = self.check_delete(&context) {
-                let _ = self.close_core(&context);
+                self.close(context);
                 return Err(status);
             }
             context.pending_delete.store(true, Ordering::Release);
@@ -686,6 +697,7 @@ impl FileSystemInterface for WindowsFs {
             error!(status, "WinFsp close failed");
         }
         context.closed.store(true, Ordering::Release);
+        drop(self.contexts(context.ino));
     }
 
     fn read(&self, context: ContextRef, buffer: &mut [u8], offset: u64) -> NtResult<usize> {

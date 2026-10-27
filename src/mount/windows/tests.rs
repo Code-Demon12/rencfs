@@ -665,6 +665,35 @@ fn windows_delete_allows_cleaned_cached_readers_but_rejects_active_ones() {
 }
 
 #[test]
+fn windows_context_registry_removes_closed_contexts_and_empty_inode_entries() {
+    let fixture = Fixture::new();
+    let fs = &fixture.adapter;
+    assert!(fs.contexts(u64::MAX).is_empty());
+    assert!(fs.opened.lock().unwrap().is_empty());
+
+    let first = fixture.create("\\tracked.txt", false);
+    let ino = first.ino;
+    let retained_first = first.clone();
+    let second = fixture
+        .open("\\tracked.txt", FileAccessRights::FILE_READ_DATA)
+        .unwrap();
+    let retained_second = second.clone();
+    assert_eq!(fs.contexts(ino).len(), 2);
+    assert_eq!(fs.opened.lock().unwrap().len(), 1);
+
+    fs.close(first);
+    assert!(retained_first.closed.load(Ordering::Acquire));
+    assert_eq!(fs.contexts(ino).len(), 1);
+    assert_eq!(fs.opened.lock().unwrap().get(&ino).unwrap().len(), 1);
+
+    fs.close(second);
+    assert!(retained_second.closed.load(Ordering::Acquire));
+    assert!(fs.opened.lock().unwrap().is_empty());
+    assert!(fs.contexts(ino).is_empty());
+    assert!(fs.opened.lock().unwrap().is_empty());
+}
+
+#[test]
 fn windows_read_ahead_allows_repeated_reads_from_zero_after_eof() {
     let fixture = Fixture::new();
     let fs = &fixture.adapter;

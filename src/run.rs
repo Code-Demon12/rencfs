@@ -350,10 +350,10 @@ async fn run_mount(cipher: Cipher, matches: &ArgMatches) -> Result<()> {
     let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
     let stop_tx = Mutex::new(Some(stop_tx));
     if let Err(err) = set_handler(move || {
-        // The signal thread only requests shutdown. Teardown and secret cleanup
-        // happen on the owning runtime after WinFsp has stopped its callbacks.
-        if let Some(tx) = stop_tx.lock().unwrap().take() {
-            let _ = tx.send(());
+        // The first signal requests teardown on the owning runtime. Another
+        // signal can still stop the process if graceful shutdown gets stuck.
+        if !request_graceful_shutdown(&stop_tx) {
+            process::exit(130);
         }
     }) {
         let _ = mount_handle.umount().await;
@@ -369,6 +369,13 @@ async fn run_mount(cipher: Cipher, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
+fn request_graceful_shutdown(stop_tx: &Mutex<Option<tokio::sync::oneshot::Sender<()>>>) -> bool {
+    let Some(tx) = stop_tx.lock().unwrap().take() else {
+        return false;
+    };
+    tx.send(()).is_ok()
+}
+
 fn remove_pass() {
     let mut pass = PASS.lock().unwrap();
     if pass.is_none() {
@@ -379,5 +386,30 @@ fn remove_pass() {
     } else {
         info!("Remove password from memory");
         *pass = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn first_signal_requests_shutdown_and_repeated_signals_force_exit() {
+        let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel();
+        let stop_tx = Mutex::new(Some(stop_tx));
+
+        assert!(request_graceful_shutdown(&stop_tx));
+        assert_eq!(stop_rx.try_recv(), Ok(()));
+        assert!(!request_graceful_shutdown(&stop_tx));
+        assert!(!request_graceful_shutdown(&stop_tx));
+    }
+
+    #[test]
+    fn signal_forces_exit_when_shutdown_receiver_is_gone() {
+        let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+        let stop_tx = Mutex::new(Some(stop_tx));
+        drop(stop_rx);
+
+        assert!(!request_graceful_shutdown(&stop_tx));
     }
 }

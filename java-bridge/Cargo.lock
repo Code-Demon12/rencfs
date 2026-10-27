@@ -2036,7 +2036,6 @@ dependencies = [
  "tracing-test",
  "windows-sys 0.52.0",
  "winfsp_wrs",
- "winfsp_wrs_build",
 ]
 
 [[package]]
@@ -3208,12 +3207,6 @@ dependencies = [
  "windows-sys 0.52.0",
  "winfsp_wrs_sys",
 ]
-
-[[package]]
-name = "winfsp_wrs_build"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d3594bb017a26059e9fa88f4f0d9a74ea5a86d44a89e535403c53e53293ab92"
 
 [[package]]
 name = "winfsp_wrs_sys"

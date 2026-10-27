@@ -106,6 +106,13 @@ After this EOF follow-up, the native Windows x86-64/MSVC session passed both
 checks below with nightly-2025-03-01. The library suite included all 18 Windows
 callback tests.
 
+The successful native working tree was committed as
+[`3d7a05f857374800bc86ee861818d5d58dfaf667`](https://github.com/Code-Demon12/rencfs/commit/3d7a05f857374800bc86ee861818d5d58dfaf667),
+the initial head of PR #332. Only reporting documentation changed between those
+native runs and that commit; the implementation, manifests and lockfiles match
+the tested state. The results in this section are historical evidence for that
+revision, not a native pass for later review changes.
+
 | Native check | Result |
 |---|---|
 | `cargo +nightly-2025-03-01 test --locked --lib -- --nocapture --test-threads=1` | 136 passed, 0 failed; 51.06 s |
@@ -121,6 +128,32 @@ remount. The append-only user-handle read was denied as expected.
 The release-profile PowerShell runner and updated GitHub Actions jobs have not
 been executed in this native session. Their release behavior remains for CI to
 verify; these debug-profile results do not claim that exact runner passed.
+
+## PR #332 review follow-up
+
+The follow-up to initial revision `3d7a05f857374800bc86ee861818d5d58dfaf667`
+makes WinFsp delay-load flags depend on Cargo's target OS, environment and
+architecture. Windows GNU and non-Windows targets receive no MSVC linker
+flags. The unused `winfsp_wrs_build` dependency is removed from both lockfiles
+without updating other dependency versions. Native Windows/MSVC remains the
+supported link environment; the sys crate's host-specific SDK discovery is not
+a promise of complete cross-link support.
+
+It also removes empty/closed entries from the Windows context registry and
+restores forced exit for a repeated shutdown signal. The first signal still
+requests graceful teardown. Two signal-decision tests pass on Linux, and a new
+Windows callback regression covers registry retirement with retained context
+references. The Windows callback suite now contains 19 tests.
+
+Local review checks: 13/13 build-script target-selection cases, 2/2 signal
+decision tests, Linux and Windows GNU all-target release Clippy, locked root
+and Java bridge metadata, rustfmt and whitespace checks passed. A native rerun
+of this follow-up is still required; the earlier 136-test and mounted-drive
+results above remain associated with the initial PR revision.
+
+The suggested `TempDir::keep()` change was not applied: locked tempfile 3.13.0
+defines `TempDir::into_path()` without deprecation and does not provide
+`TempDir::keep()`. Switching to the newer API would break the locked build.
 
 ## Scope and compatibility
 

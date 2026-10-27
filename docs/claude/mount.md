@@ -1,6 +1,6 @@
 # mount module
 
-Files: `src/mount.rs` (platform-independent API), `src/mount/linux.rs` (fuse3 implementation, Linux only), `src/mount/dummy.rs` (stub for other platforms)
+Files: `src/mount.rs` (platform-independent API), `src/mount/linux.rs` (fuse3 implementation, Linux only), `src/mount/windows.rs` (native WinFsp implementation, Windows only), `src/mount/dummy.rs` (stub for other platforms)
 
 Adapts `EncryptedFs` to a mounted filesystem. Linux selects `linux.rs` (FUSE),
 Windows selects `windows.rs` (WinFsp), and other platforms select `dummy.rs`.
